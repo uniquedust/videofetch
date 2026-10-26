@@ -1,0 +1,14 @@
+# 登录凭据，绝不提交
+cookies.txt
+
+# 下载内容和运行产物
+downloads/
+
+# 便携工具
+tools/
+
+__pycache__/
+*.pyc
+
+# 会话数据
+.zcode/
