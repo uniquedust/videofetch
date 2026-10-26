@@ -17,6 +17,7 @@ import argparse
 import email.utils
 import json
 import os
+import shutil
 import struct
 import subprocess
 import sys
@@ -26,16 +27,37 @@ import urllib.request
 import zlib
 from pathlib import Path
 
-FFMPEG = Path(r"D:\ffmpeg.exe")
 PROJECT_DIR = Path(__file__).resolve().parent
 DOWNLOAD_DIR = PROJECT_DIR / "downloads"
 COOKIES_FILE = PROJECT_DIR / "cookies.txt"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
 
+
+def find_ffmpeg():
+    """按优先级找 ffmpeg：随仓库附带的 → 旧机器固定路径 → 系统 PATH。"""
+    for p in (PROJECT_DIR / "ffmpeg.exe", Path(r"D:\ffmpeg.exe")):
+        if p.exists():
+            return p
+    found = shutil.which("ffmpeg")
+    return Path(found) if found else None
+
+
+FFMPEG = find_ffmpeg()
+
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
     sys.stderr.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
+
+
+def check_ytdlp():
+    """确认 yt-dlp 已装进当前 Python 环境。"""
+    try:
+        r = subprocess.run([sys.executable, "-m", "yt_dlp", "--version"],
+                           capture_output=True, text=True, timeout=30)
+        return r.returncode == 0
+    except Exception:
+        return False
 
 
 def _http_get(url, cookie=None):
@@ -109,7 +131,8 @@ def qr_login():
     try:
         import qrcode
     except ImportError:
-        print("✘ 缺少 qrcode 库，请先执行: pip install qrcode")
+        print("✘ 缺少 qrcode 库，请先执行：")
+        print(f"    {sys.executable} -m pip install qrcode")
         return False
     print("正在向B站申请登录二维码...")
     _, body = _http_get("https://passport.bilibili.com/x/passport-login/web/qrcode/generate")
@@ -243,17 +266,19 @@ def yt_core_args(args, with_cookies=True):
 
 def download_opts():
     """下载专用参数：ffmpeg 位置、命名、断点续传等。"""
-    opts = [
-        "--ffmpeg-location", str(FFMPEG),
+    if FFMPEG is None:
+        opts = []
+        print("[提示] 没找到 ffmpeg，音视频无法合并。"
+              "请把 ffmpeg.exe 放到本目录，或安装到系统 PATH")
+    else:
+        opts = ["--ffmpeg-location", str(FFMPEG)]
+    opts += [
         "--windows-filenames",
         "--embed-metadata",
         "--download-archive", str(DOWNLOAD_DIR / "downloaded.txt"),
         "--no-overwrites",
         "--retries", "10",
     ]
-    if not FFMPEG.exists():
-        opts = opts[2:]
-        print(f"[提示] 没找到 {FFMPEG}，音视频合并可能失败")
     return opts
 
 
@@ -367,6 +392,11 @@ def main():
 
     if args.login:
         sys.exit(0 if qr_login() else 1)
+
+    if not check_ytdlp():
+        print("✘ 缺少 yt-dlp，请先执行：")
+        print(f"    {sys.executable} -m pip install yt-dlp")
+        sys.exit(1)
 
     urls = [u.strip().strip('"') for u in args.urls if u.strip()]
     if not urls:

@@ -1,6 +1,13 @@
 # videofetch — B站视频下载小工具
 
-用已装好的 [yt-dlp](https://github.com/yt-dlp/yt-dlp) + `D:\ffmpeg.exe` 把B站视频下载到本地，支持会员最高画质（1080P高码率 / 4K / HDR）。
+用 [yt-dlp](https://github.com/yt-dlp/yt-dlp) + ffmpeg 把B站视频下载到本地，支持会员最高画质（1080P高码率 / 4K / HDR）。仅支持 Windows。
+
+## 安装依赖（在其他电脑上使用）
+
+1. 安装 [Python 3.8+](https://www.python.org/downloads/)（安装时勾选 **Add to PATH**）；
+2. 执行 `pip install yt-dlp qrcode`；
+3. ffmpeg **已随仓库附带**（ffmpeg.exe，和脚本同目录），无需额外安装；脚本也会自动探测系统 PATH 里的 ffmpeg；
+4. 双击 `扫码登录.bat` 登录 → 双击 `下载视频.bat` 下载。
 
 ## 怎么用
 

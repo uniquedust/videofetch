@@ -4,7 +4,10 @@ chcp 65001 >nul
 cd /d "%~dp0"
 set "PYTHONIOENCODING=utf-8"
 set "PY=D:\epoint\python313\python.exe"
-if not exist "%PY%" set "PY=python"
+if exist "%PY%" goto :run
+set "PY=python"
+where python >nul 2>nul || set "PY=py"
+:run
 "%PY%" videofetch.py %*
 echo.
 echo Done. Press any key to close this window.
