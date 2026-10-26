@@ -50,14 +50,30 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
 
 
-def check_ytdlp():
-    """确认 yt-dlp 已装进当前 Python 环境。"""
+def ensure_deps():
+    """缺哪个依赖自动 pip 装哪个（装过就跳过；国内网络失败自动换清华镜像）。"""
+    missing = []
     try:
-        r = subprocess.run([sys.executable, "-m", "yt_dlp", "--version"],
-                           capture_output=True, text=True, timeout=30)
-        return r.returncode == 0
-    except Exception:
-        return False
+        import yt_dlp  # noqa: F401
+    except ImportError:
+        missing.append("yt-dlp")
+    try:
+        import qrcode  # noqa: F401
+    except ImportError:
+        missing.append("qrcode")
+    if not missing:
+        return True
+    pkgs = " ".join(missing)
+    print(f"首次运行，自动安装缺失的依赖: {pkgs} （只需一次，请稍候）...")
+    attempts = [[], ["-i", "https://pypi.tuna.tsinghua.edu.cn/simple"]]
+    for extra in attempts:
+        r = subprocess.run([sys.executable, "-m", "pip", "install", *extra, *missing])
+        if r.returncode == 0:
+            print("✔ 依赖安装完成")
+            return True
+    print("✘ 自动安装失败，请手动执行：")
+    print(f"    {sys.executable} -m pip install {pkgs}")
+    return False
 
 
 def _http_get(url, cookie=None):
@@ -390,13 +406,11 @@ def main():
                         help="扫码登录B站，生成 cookies.txt（解锁会员画质）")
     args = parser.parse_args()
 
+    if not ensure_deps():
+        sys.exit(1)
+
     if args.login:
         sys.exit(0 if qr_login() else 1)
-
-    if not check_ytdlp():
-        print("✘ 缺少 yt-dlp，请先执行：")
-        print(f"    {sys.executable} -m pip install yt-dlp")
-        sys.exit(1)
 
     urls = [u.strip().strip('"') for u in args.urls if u.strip()]
     if not urls:

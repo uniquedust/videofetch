@@ -5,7 +5,7 @@
 ## 安装依赖（在其他电脑上使用）
 
 1. 安装 [Python 3.8+](https://www.python.org/downloads/)（安装时勾选 **Add to PATH**）；
-2. 执行 `pip install yt-dlp qrcode`；
+2. 依赖（yt-dlp、qrcode）**首次双击运行时自动安装**，无需手动操作；也可提前手动执行 `pip install yt-dlp qrcode`；
 3. ffmpeg **已随仓库附带**（ffmpeg.exe，和脚本同目录），无需额外安装；脚本也会自动探测系统 PATH 里的 ffmpeg；
 4. 双击 `扫码登录.bat` 登录 → 双击 `下载视频.bat` 下载。
 
